@@ -42,6 +42,13 @@ class Console
 {
 
     /**
+     * Version
+     *
+     * @const string
+     */
+    const VERSION = '1.0';
+
+    /**
      * Session namespace
      *
      * @const string
@@ -388,9 +395,6 @@ class Console
     {
         // Get a simple string without HTML
         $result = htmlspecialchars(implode("\n", $result));
-
-//        echo $result;
-//        echo "\n\n";
 
         // Spaces
         $result = str_replace(' ', '&nbsp;', $result);
