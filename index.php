@@ -457,7 +457,10 @@ class Console
      */
     public function getHostname()
     {
-        return $_SERVER['SERVER_ADDR'];
+        if (array_key_exists('SERVER_ADDR', $_SERVER)) {
+            return $_SERVER['SERVER_ADDR'];
+        }
+        return 'localhost';
     }
 
     /**
