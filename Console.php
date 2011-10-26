@@ -18,7 +18,7 @@
  * @license GNU Lesser General Public License
  * @author Jacques Bodin-Hullin <jacques (at) bodin-hullin (dot) net>
  * @package Console
- * @version 1.0
+ * @version 1.1
  *
  * @github http://github.com/jacquesbh/console
  */
@@ -46,7 +46,7 @@ class Console
      *
      * @const string
      */
-    const VERSION = '1.0';
+    const VERSION = '1.1';
 
     /**
      * Session namespace
@@ -69,7 +69,7 @@ class Console
      * @access protected
      * @var string
      */
-    protected $_prompt = '<span class="green">%1$s@%2$s</span> <span class="pwd blue">%3$s</span><br/><span class="blue">&gt;&gt; </span>';
+    protected $_prompt = '%1$s@%2$s <span class="pwd">%3$s</span> $ ';
 
     /**
      * HTTP Auth Active
@@ -169,6 +169,39 @@ class Console
 
         // Dispatch Console
         return;
+    }
+
+    /**
+     * Returns HTML form
+     *
+     * @param string $action Action form
+     * @access public
+     * @return string
+     */
+    public function getFormHtml($action)
+    {
+        $searchAndReplace = array(
+            '{{ACTION}}' => urlencode($action),
+            '{{PROMPT}}' => $this->getPrompt()
+        );
+
+        // Get content in this file
+        $fp = fopen(__FILE__, 'r');
+        fseek($fp, __COMPILER_HALT_OFFSET__);
+        $content = stream_get_contents($fp);
+        fclose($fp);
+
+        unset($fp);
+
+        // Get form only
+        $content = preg_replace('`^\?>\s+<\!-- CONSOLE FORM -->`', '', trim($content));
+
+        // Returs content with variables replacement
+        return str_replace(
+            array_keys($searchAndReplace),
+            array_values($searchAndReplace),
+            $content
+        );
     }
 
     /**
@@ -426,7 +459,7 @@ class Console
         $pwd = $this->getSession('currentWorkingPwd');
         if (!$pwd) {
             $pwd = $this->getWorkingDirectory(true);
-        } elseif ($pwd == $this->_home) {
+        } elseif (strtolower($pwd) == strtolower($this->_home)) {
             $pwd = $this->_homeReplacement;
         }
 
@@ -436,6 +469,19 @@ class Console
             $this->getHostname(),
             $pwd
         );
+    }
+
+    /**
+     * Change the prompt
+     *
+     * @param string $prompt
+     * @access public
+     * @return Console
+     */
+    public function setPrompt($prompt)
+    {
+        $this->_prompt = (string) $prompt;
+        return $this;
     }
 
     /**
@@ -473,7 +519,8 @@ class Console
     {
         $cwd = $this->getPwd();
         if ($replaceHome) {
-            if ($cwd == $this->_home) {
+            //echo $cwd, '::', $this->_home;
+            if (strtolower($cwd) == strtolower($this->_home)) {
                 $cwd = $this->_homeReplacement;
             }
         }
@@ -508,12 +555,24 @@ class Console
      * Change the home directory
      *
      * @param string $home
+     * @access public
      * @return Console
      */
     public function setHome($home)
     {
         $this->_home = (string) $home;
         return $this;
+    }
+
+    /**
+     * Get the home directory
+     *
+     * @access public
+     * @return string
+     */
+    public function getHome()
+    {
+        return $this->_home;
     }
 
     /**
@@ -580,64 +639,15 @@ class Console
     }
 }
 
-$console = new Console;
-
-$console
-    ->setHome($_SERVER['DOCUMENT_ROOT'])
-    ->setPaths(array('$PATH', '/opt/local/bin'))
-    ->dispatch();
-
-// text/html header
-header('Content-Type: text/html; charset=utf-8;');
+// Compiler Halt for use __COMPILER_HALT_OFFSET__ constant
+__halt_compiler();
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Console</title>
-    <style type="text/css">
-    body {
-        background: #333;
-        color: #fff;
-        padding: 10px;
-        margin: 0;
-        font-size: 11px;
-        font-family: monospace;
-        line-height: 13px;
-    }
-    #console {
-        margin: 0;
-    }
-    form {
-        width: 100%;
-    }
-    input {
-        width: 400px;
-        background: #333;
-        color: white;
-        border: none;
-        outline: none;
-    }
-    .clear { clear: both; }
-    .color-31, .red { color: #f22; } /* red */
-    .color-32, .green { color: #2da814; } /* green */
-    .color-33 { color: orange; }
-    .color-34, .blue { color: #5542f2; } /* blue */
-    .color-35 { color: #ff3; } /* yellow */
-    .color-36 { color: violet; }
-    .color-37 { color: #cecece; } /* grey */
-    .color-43 { color: black; background-color: #ff3; }
-    .login { color: #2da814; }
-    </style>
 
-    <!-- jQuery -->
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
-</head>
-<body>
-
+<!-- CONSOLE FORM -->
 <div id="console"></div>
 
-<form id="prompt" action="./index.php" method="post" autocomplete="off">
-    <?php echo $console->getPrompt(); ?>
+<form id="prompt" action="{{ACTION}}" method="post" autocomplete="off">
+    {{PROMPT}}
     <input type="text" name="command" id="command" />
 </form>
 
@@ -645,70 +655,103 @@ header('Content-Type: text/html; charset=utf-8;');
 // <![CDATA[
 (function ($) {
 
+    // Document
     var $doc = $(document);
 
+    // On ready... Go !
     $doc.ready(function () {
 
+        // Focus command line input
         $('#command').focus();
 
+        // Liste of key codes
         var keyCodeCtrl     = 17;
         var keyCodeL        = 76;
         var keyCodeTop      = 38;
         var keyCodeBottom   = 40;
 
+        // Tab for keys
         var keys = [];
 
+        // Commands History !
         var history = new Array();
         var historyCurrent = 0;
 
-        var $body    = $('#body');
+        // Declare vars for use
         var $console = $('#console');
         var $command = $('#command');
         var $prompt  = $('#prompt');
-    
+
+        // On submit command line :)
         $prompt.submit(function () {
 
-
+            // Serialize data for ajax call before cleaning...
             var data = $(this).serialize();
+
+            // Append history for history navigation
             history.push($command.val());
+
+            // Clean prompt for next command and disable it
             $command.prop('disabled', 'disabled').val('');
 
-            loaderStart();
+            // Starts the loader for commands who take more time
+            consoleLoaderStart();
 
+            // Ajax call !
             $.ajax({
-                type: 'post',
-                data: data,
-                url: $command.attr('action'),
-                dataType: 'json',
+                type: 'post', // POST of course
+                data: data, // serialized form
+                url: $command.attr('action'), // Form action
+                dataType: 'json', // Console returns JSON
                 success: function (data) {
+                    // Append result
                     $console.append(data['command']);
                     $console.append(data['result']);
+
+                    // Scroll to bottom
                     $('html, body').animate({
                          scrollTop: $(document).height()
                      },
                      1000);
+
+                    // Enable prompt and clean it
                     $command.prop('disabled', '').val('');
+
+                    // History pointer
                     historyCurrent = 0;
+
+                    // Change path prompt
                     $prompt.find('.pwd').html(data.pwd);
-                    loaderEnd();
+                    $doc.prop('title', data.pwd);
+
+                    // Ending Loader
+                    consoleLoaderEnd();
                 }
             });
 
             return false;
-        }).keydown(function (e) {
+        })
+
+        // On key down
+        .keydown(function (e) {
+
+            // Add Key in keys tab
             keys[e.keyCode] = e.keyCode;
 
-            // Catch Top & Bottom
+            // Catch Top & Bottom for History navigation
             if (e.keyCode == keyCodeTop) {
+                // Move top on history
                 historyCurrent = historyCurrent + 1;
                 if (historyCurrent > history.length) {
                     historyCurrent = history.length;
                 }
             } else if (e.keyCode == keyCodeBottom) {
+                // Move bottom on history
                 if (historyCurrent > 0) {
                     historyCurrent = historyCurrent - 1;
                 }
             }
+            // Change current history pointer and fill prompt input
             if (e.keyCode == keyCodeTop || e.keyCode == keyCodeBottom) {
                 if (historyCurrent == 0) {
                     history.push($command.val());
@@ -728,7 +771,11 @@ header('Content-Type: text/html; charset=utf-8;');
                 }
             }
 
-        }).keyup(function (e) {
+        })
+
+        // On key up
+        .keyup(function (e) {
+            // Remove key from keys tab
             keys[e.keyCode] = null;
         });
 
@@ -740,11 +787,11 @@ header('Content-Type: text/html; charset=utf-8;');
     });
 })(jQuery);
 
-var loader = null;
-
-function loaderStart()
+// The Loader
+var consoleLoader = null;
+function consoleLoaderStart()
 {
-    loader = setInterval(function () {
+    consoleLoader = setInterval(function () {
         var v = jQuery('#command').val();
         if (v == '/') {
             v = '-';
@@ -759,14 +806,12 @@ function loaderStart()
     }, 100);
 }
 
-function loaderEnd()
+function consoleLoaderEnd()
 {
-    clearInterval(loader);
+    clearInterval(consoleLoader);
     jQuery('#command').val('');
 }
 
 // ]]>
 </script>
 
-</body>
-</html>
