@@ -1,10 +1,14 @@
 <?php
 
-// Console is required ! Of course :)
-require 'Console.php';
+// Autoload
+require_once __DIR__ . '/vendor/autoload.php';
 
 // New instance
-$console = new Console;
+$console = new \Jacquesbh\Console;
+
+// Users for Http Auth ?
+$console->activeHttpAuth(false);
+//$console->addUser('username', 'password');
 
 // Set PATH
 $console->setPaths(array('$PATH'));
