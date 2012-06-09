@@ -89,7 +89,7 @@ class Console
      * @access protected
      * @var array
      */
-    protected $_paths = ['$PATH'];
+    protected $_paths = array('$PATH');
 
     /**
      * Home directory used for this instance
@@ -112,7 +112,7 @@ class Console
      * @access protected
      * @var array
      */
-    protected $_users = [];
+    protected $_users = array();
 
     /**
      * Constructor
@@ -147,13 +147,13 @@ class Console
         $this->httpAuth();
 
         // Execute command line
-        $result = [];
+        $result = array();
         if (false !== $command = $this->_handleData($result)) {
-            echo json_encode([
+            echo json_encode(array(
                 'command'   => '<div class="clear">' . $this->getPrompt() . htmlspecialchars($command) . '</div>',
                 'result'    => $result,
                 'pwd'       => $this->getWorkingDirectory(true)
-            ]);
+            ));
             exit;
         }
 
@@ -173,10 +173,10 @@ class Console
      */
     public function getFormHtml($action)
     {
-        $searchAndReplace = [
+        $searchAndReplace = array(
             '{{ACTION}}'    => urlencode($action),
             '{{PROMPT}}'    => $this->getPrompt()
-        ];
+        );
 
         // Get content in this file
         $fp = fopen(__FILE__, 'r');
@@ -245,7 +245,7 @@ class Console
             $resultText = '';
 
             foreach ($commands as $command) {
-                $result = [];
+                $result = array();
 
                 // CHANGE DIRECTORY PROXY
                 if (substr($command, 0, 2) == 'cd') {
@@ -369,7 +369,7 @@ class Console
 
             $http_digest_parse = function ($txt)
             {
-                $needed_parts = [
+                $needed_parts = array(
                     'nonce'     => 1,
                     'nc'        => 1,
                     'cnonce'    => 1,
@@ -377,8 +377,8 @@ class Console
                     'username'  => 1,
                     'uri'       => 1,
                     'response'  => 1
-                ];
-                $data = [];
+                );
+                $data = array();
                 $keys = implode('|', array_keys($needed_parts));
              
                 preg_match_all('@(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@', $txt, $matches, PREG_SET_ORDER);
