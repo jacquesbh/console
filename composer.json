@@ -1,0 +1,18 @@
+{
+    "name": "jacquesbh/console",
+    "description": "A simple PHP web shell",
+    "version": "1.2",
+    "authors": [
+        {
+            "name": "Jacques Bodin-Hullin",
+            "email": "jacques@bodin-hullin.net",
+            "homepage": "http://jacquesbodinhullin.net"
+        }
+    ],
+    "autoload": {
+        "psr-0": {"Jacquesbh": "lib/"}
+    },
+    "require": {
+        "php": ">=5.4"
+    }
+}
