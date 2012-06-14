@@ -84,7 +84,7 @@ class Console extends atoum\test
                 $console->addUser('jacquesbh', 'password');
             })
                 ->array($property->getValue($console))
-                    ->isEqualTo(array('jacquesbh' => 'password'))
+                    ->isEqualTo(['jacquesbh' => 'password'])
             ->when(function () use ($console) {
                 $console->removeUser('jacquesbh');
             })
@@ -104,7 +104,7 @@ class Console extends atoum\test
                 $console->setSession('foo', 'bar');
             })
                 ->array($console->getSession())
-                    ->isEqualTo(array('foo' => 'bar'))
+                    ->isEqualTo(['foo' => 'bar'])
         ;
     }
 
